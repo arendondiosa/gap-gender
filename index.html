@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Brecha de Género Mundial</title>
+<link rel="shortcut icon" type="image/png" href="./favicon.ico"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+<style>
+* {
+  font-family: 'Roboto', sans-serif;
+}
+/* CSS goes here. */
+path {
+  fill: gray;
+  stroke: gray;
+  stroke-width: 0px;
+}
+
+/*.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .5px;
+  stroke-opacity: .5;
+}
+
+.land {
+  fill: #222;
+}
+.boundary {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}*/
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/d3-array.v1.min.js"></script>
+<script src="https://d3js.org/d3-collection.v1.min.js"></script>
+<script src="https://d3js.org/d3-color.v1.min.js"></script>
+<script src="https://d3js.org/d3-format.v1.min.js"></script>
+<script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+<script src="https://d3js.org/d3-time.v1.min.js"></script>
+<script src="https://d3js.org/d3-time-format.v2.min.js"></script>
+<script src="https://d3js.org/d3-scale.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo.v1.min.js"></script>
+<script src="https://d3js.org/d3-geo-projection.v1.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.8.0/d3-legend.min.js"></script>
+<script>
+/* JavaScript goes here. */
+var width = window.innerWidth - 20, height = window.innerHeight - 20;
+var graticule = d3.geo.graticule();
+
+const svg = d3
+  .select('body')
+  .append('svg')
+  .attr('width', width)
+  .attr('height', height);
+
+d3.json('./data/world-50m.json', (error, world) => {
+  if (error) return console.error(error);
+  // console.log(colombia);
+  const countries = topojson.feature(world, world.objects.countries);
+  // console.log(countries);
+
+  const projection = d3
+    .geoWinkel3()
+    .scale(200)
+    .center([0, 0])
+    .translate([width / 2, height / 2]);
+
+  const path = d3.geo.path().projection(projection);
+  // svg
+  //   .append('path')
+  //   .datum(graticule)
+  //   .attr('class', 'graticule')
+  //   .attr('d', path);
+
+  const color = d3
+    .scaleLinear()
+    .domain([0, 0.5, 0.7, 0.8, 1])
+    .range(['#1565c0', '#64b5f6', '#f8bbd0', '#f06292']);
+
+  svg.append('path').datum(countries).attr('d', path);
+
+  svg
+    .selectAll('.countries')
+    .data(countries.features)
+    .enter()
+    .append('path')
+    .attr('class', d => {
+      // console.log(d.id);
+      return 'countries ' + 'c' + d.id;
+    })
+    .attr('d', path);
+  svg
+    .append('g')
+    .attr('class', 'legendLinear')
+    .attr('transform', 'translate(20,20)');
+
+  const legendLinear = d3.legend.color().cells(11).shapeWidth(20).scale(color);
+  svg.select('.legendLinear').call(legendLinear);
+
+  d3.json('./data/gap.json', (err, info) => {
+    if (!err) {
+      d3.json('./data/countriesISO.json', (err, iso) => {
+        if (!err) {
+          // console.log(iso.Argentina.id);
+          for (country in info) {
+            if (iso[country]) {
+              // console.log(
+              //   country +
+              //     'id-> ' +
+              //     iso[country].id +
+              //     '-> ' +
+              //     info[country].score
+              // );
+              //     let hombres = info[dpt].hombres;
+              //     let mujeres = info[dpt].mujeres;
+              //     let ran = mujeres * 100 / (hombres + mujeres);
+              //     console.log(dpt + '-> ' + ran);
+              svg
+                .selectAll('.c' + iso[country].id)
+                .style('fill', color(info[country].score))
+                .style('stroke', color(info[country].score));
+            } else {
+              console.log('******' + country);
+            }
+          }
+        }
+      });
+    }
+  });
+});
+</script>
+</body>
+</html>
